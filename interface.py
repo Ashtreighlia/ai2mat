@@ -21,7 +21,7 @@ sg.theme('Dark Purple 4')
 settings = [
     # Title
     [sg.HorizontalSeparator()],
-    [sg.Text('AI2Tex', font='Any 32 bold', justification='center')],
+    [sg.Text('AI2MAT', font='Any 32 bold', justification='center')],
     [sg.HorizontalSeparator()],
 
     # Texture generation
@@ -118,7 +118,7 @@ layout = [[sg.Column(settings, vertical_alignment='top'),
            sg.Column(previews, vertical_alignment='top')]]
 
 # Create the window
-window = sg.Window('AI2Tex', layout, finalize=True)
+window = sg.Window('AI2MAT', layout, finalize=True)
 
 # Display and interact with the Window using an Event Loop
 startup = True
@@ -330,10 +330,4 @@ while True:
 
 # Finish up by removing from the screen
 window.close()
-
-'''
-prompt = ai2tex.prompt_create(material_type)
-tex = ai2tex.tex_create(prompt, size, create_inference_steps)
-'''
-
 # %%
