@@ -73,4 +73,4 @@ Clone the repository and install the dependencies listed below.
 Contributions are welcome, just open an issue or a pull request.
 
 ## License
-The code is licensed under the [MIT License](./LICENSE.md).
+The code is licensed under the [MIT License](./LICENSE).
