@@ -2,7 +2,7 @@
 import numpy as np
 from PIL import Image
 import cv2
-from helper import tex_to_arr, arr_to_tex
+from helper import tex_to_arr, arr_to_tex, soft_light
 #%%
 def tex_to_depth(tex, depth_invert=True):
     '''
@@ -28,10 +28,45 @@ def tex_to_depth(tex, depth_invert=True):
         arr = -arr
 
     arr = cv2.normalize(arr, None, 0, 255, cv2.NORM_MINMAX)
-    arr.astype(np.uint8)
+    arr = arr.astype(np.uint8)
     depth = arr_to_tex(arr)
     depth.convert('L')
     return depth
+
+def tex_to_diff(tex, strength):
+    '''
+    ------------------------------------------------
+    A function that converts a texture to a diffuse map.
+
+    Args:
+    ------------------------------------------------
+    tex: A PIL image representing the texture.
+    strength: A float representing the strength of lighting information removal.
+
+    Returns:
+    ------------------------------------------------
+    A PIL image representing the diffuse map.
+    '''
+
+    arr = tex_to_arr(tex)
+    # compute the grayscale inverse of the texture
+    gray = cv2.cvtColor(arr, cv2.COLOR_RGB2GRAY)
+    inv = 255 - gray
+    inv = cv2.cvtColor(inv, cv2.COLOR_GRAY2RGB)
+
+    # remove the lighting information from the texture
+    diff = soft_light(arr, inv)
+
+    # adjust the strength of the diffuse map
+    diff = diff * (strength/100) + arr * (1 - strength/100)
+
+    # Normalize the values to the range [0, 255]
+    diff = cv2.normalize(diff, None, 0, 255, cv2.NORM_MINMAX)
+    print(diff)
+    diff = diff.astype(np.uint8)
+    print(diff)
+    diff = arr_to_tex(diff)
+    return diff
 
 def depth_to_norm(depth, strength):
     '''
@@ -89,7 +124,6 @@ def depth_to_disp(depth, strength):
     lower_bound = 255/2 - strength
     upper_bound = 255/2 + strength
     arr = cv2.normalize(arr, None, lower_bound, upper_bound, cv2.NORM_MINMAX, cv2.CV_8UC1)
-
     arr = arr.astype(np.uint8)
     disp = arr_to_tex(arr)
     disp.convert('L')
@@ -119,7 +153,6 @@ def tex_to_rough(tex, strength):
     strength = 255/2 * strength/100
     lower_bound = 255/2 - strength
     arr = cv2.normalize(arr, None, lower_bound, 255, cv2.NORM_MINMAX, cv2.CV_8UC1)
-
     arr = arr.astype(np.uint8)
     rough = arr_to_tex(arr)
     rough.convert('L')
@@ -171,19 +204,19 @@ def metallic_map(base_color_map, roughness_map, depth_map, strength):
     strength = 255/2 * strength/100
     upper_bound = 255/2 + strength
     metal = cv2.normalize(metal, None, 0, upper_bound, cv2.NORM_MINMAX, cv2.CV_8UC1)
-
     metal = metal.astype(np.uint8)
     metal = arr_to_tex(metal)
     metal.convert('L')
     return metal
 
-def tex_to_mat(tex, depth_invert, metallness, roughness, norm_strength, disp_strength):
-    color = tex
+def tex_to_mat(tex, depth_invert, diff_strength, metallness_strength, roughness_strength, norm_strength, disp_strength):
+    raw = tex
+    diff = tex_to_diff(tex, diff_strength)
     depth = tex_to_depth(tex, depth_invert)
     normal = depth_to_norm(depth, norm_strength)
     disp = depth_to_disp(depth, disp_strength)
-    rough = tex_to_rough(tex, roughness)
-    metal = metallic_map(tex, rough, depth, metallness)
+    rough = tex_to_rough(tex, roughness_strength)
+    metal = metallic_map(tex, rough, depth, metallness_strength)
 
-    return color, rough, metal, depth, normal, disp
+    return raw, diff, rough, metal, depth, normal, disp
 # %%

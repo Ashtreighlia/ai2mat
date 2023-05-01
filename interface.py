@@ -43,17 +43,25 @@ settings = [
     [sg.Radio('10', "seam_quality", key="seam_qual_10"), sg.Radio('25', "seam_quality", key="seam_qual_25", default=True),
      sg.Radio('50', "seam_quality", key="seam_qual_50"), sg.Radio('75', "seam_quality", key="seam_qual_75")],
 
+    [sg.Text("Load from file", font='Any 12')],
+    [sg.In(size=(25, 1), enable_events=True, key='-RAW_FILE-'), sg.FileBrowse(), sg.Button('Load')],
+    [sg.Radio('save file', "loadtype", key="loadtype_savefile", default=True), sg.Radio('photo', "loadtype", key="loadtype_photo")],
+
     # Material synthesis
     [sg.Text('')],
     [sg.Text("Material synthesis", font='Any 12 bold')],
     [sg.HorizontalSeparator()],
+    [sg.Text("Diffuse", font='Any 12')],
+    [sg.Slider(range=(0, 100), default_value=100, orientation='h',
+               size=(34, 10), key="diffuse_strength")],
+
     [sg.Text("Metallness", font='Any 12')],
     [sg.Slider(range=(0, 100), default_value=100, orientation='h',
-               size=(34, 10), key="metallness")],
+               size=(34, 10), key="metallness_strength")],
 
     [sg.Text("Roughness", font='Any 12')],
     [sg.Slider(range=(0, 100), default_value=100,
-               orientation='h', size=(34, 10), key="roughness")],
+               orientation='h', size=(34, 10), key="roughness_strength")],
 
     [sg.Text("Invert depth", font='Any 12')],
     [sg.Slider(range=(0, 1), default_value=1, orientation='h',
@@ -74,8 +82,9 @@ settings = [
     [sg.Text('Texture resolution')],
     [sg.Radio('64', "texture_resolution", key="tex_res_64"), sg.Radio('128', "texture_resolution", key="tex_res_128", default=True),
      sg.Radio('256', "texture_resolution", key="tex_res_256"), sg.Radio('512', "texture_resolution", key="tex_res_512")],
-    [sg.Text('Directory'), sg.In(size=(25, 1), enable_events=True,
-                                 key='-FOLDER-'), sg.FolderBrowse()],
+
+    [sg.Text('Save'), sg.In(size=(25, 1), enable_events=True,
+                                 key='-SAVE_FOLDER-'), sg.FolderBrowse()],
     [sg.Button('Generate'), sg.Button('Tile'),
      sg.Button('Synthesize'), sg.Button('Save')],
 ]
@@ -85,8 +94,8 @@ previews = [
     [sg.Column([[sg.Image(size=(600, 600), key='-PREVIEW-')],], size=(600, 600))],
     [
         sg.Column([
-            [sg.Text('color')],
-            [sg.Image(size=(200, 200), key='-PREVIEW_COLOR-')],
+            [sg.Text('diffuse')],
+            [sg.Image(size=(200, 200), key='-PREVIEW_DIFF-')],
         ]),
         sg.Column([
             [sg.Text('roughness')],
@@ -134,7 +143,7 @@ while True:
 
         # update the preview images
         checkerboard_small = checkerboard.resize((200, 200))
-        window['-PREVIEW_COLOR-'].update(
+        window['-PREVIEW_DIFF-'].update(
             data=ImageTk.PhotoImage(checkerboard_small))
         window['-PREVIEW_ROUGH-'].update(
             data=ImageTk.PhotoImage(checkerboard_small))
@@ -198,11 +207,14 @@ while True:
     else:
         invert_depth = False
 
+    # diffuse
+    diffuse_strength = values['diffuse_strength']
+
     # metallness
-    metallness = values['metallness']
+    metallness_strength = values['metallness_strength']
 
     # roughness
-    roughness = values['roughness']
+    roughness_strength = values['roughness_strength']
 
     # normal strength
     normal_strength = values['normal_strength']
@@ -220,47 +232,57 @@ while True:
     elif values['tex_res_512']:
         tex_res = 512
 
+    # load type
+    if values['loadtype_savefile']:
+        loadtype_photo = False
+    elif values['loadtype_photo']:
+        loadtype_photo = True
+
     # generate the texture
     if event == 'Generate':
         # create the texture
-        prompt = ai2tex.prompt_create(material_type)
-        tex = ai2tex.tex_create(prompt, 512, quality)
+        if(material_type == ""):
+            sg.popup_error('No material type entered!')
 
-        # remove the seams
-        tex = ai2tex.tex_shift(tex)
-        mask = ai2tex.tex_mask_seam(tex, seam_width)
-        tex = ai2tex.tex_seam(prompt, tex, mask, seam_removal_quality)
-        tex = ai2tex.tex_shift(tex)
+        else:
+            prompt = ai2tex.prompt_create(material_type)
+            tex = ai2tex.tex_create(prompt, 512, quality)
 
-        mask = ai2tex.tex_mask_center(tex, seam_width)
-        tex = ai2tex.tex_seam(prompt, tex, mask, seam_removal_quality)
+            # remove the seams
+            tex = ai2tex.tex_shift(tex)
+            mask = ai2tex.tex_mask_seam(tex, seam_width)
+            tex = ai2tex.tex_seam(prompt, tex, mask, seam_removal_quality)
+            tex = ai2tex.tex_shift(tex)
 
-        tex_preview = tex.resize((600, 600))
-        window['-PREVIEW-'].update(data=ImageTk.PhotoImage(image=tex_preview))
+            mask = ai2tex.tex_mask_center(tex, seam_width)
+            tex = ai2tex.tex_seam(prompt, tex, mask, seam_removal_quality)
 
-        # texture to material
-        color, rough, metal, depth, norm, disp = tex2mat.tex_to_mat(
-            tex, invert_depth, metallness, roughness, normal_strength, displacement_strength)
+            tex_preview = tex.resize((600, 600))
+            window['-PREVIEW-'].update(data=ImageTk.PhotoImage(image=tex_preview))
 
-        color_preview = color.resize((200, 200))
-        rough_preview = rough.resize((200, 200))
-        metal_preview = metal.resize((200, 200))
-        depth_preview = depth.resize((200, 200))
-        norm_preview = norm.resize((200, 200))
-        disp_preview = disp.resize((200, 200))
+            # texture to material
+            raw, diff, rough, metal, depth, norm, disp = tex2mat.tex_to_mat(
+                tex, invert_depth, diffuse_strength, metallness_strength, roughness_strength, normal_strength, displacement_strength)
 
-        window['-PREVIEW_COLOR-'].update(
-            data=ImageTk.PhotoImage(image=color_preview))
-        window['-PREVIEW_ROUGH-'].update(
-            data=ImageTk.PhotoImage(image=rough_preview))
-        window['-PREVIEW_METAL-'].update(
-            data=ImageTk.PhotoImage(image=metal_preview))
-        window['-PREVIEW_DEPTH-'].update(
-            data=ImageTk.PhotoImage(image=depth_preview))
-        window['-PREVIEW_NORMAL-'].update(
-            data=ImageTk.PhotoImage(image=norm_preview))
-        window['-PREVIEW_DISP-'].update(
-            data=ImageTk.PhotoImage(image=disp_preview))
+            diff_preview = diff.resize((200, 200))
+            rough_preview = rough.resize((200, 200))
+            metal_preview = metal.resize((200, 200))
+            depth_preview = depth.resize((200, 200))
+            norm_preview = norm.resize((200, 200))
+            disp_preview = disp.resize((200, 200))
+
+            window['-PREVIEW_DIFF-'].update(
+                data=ImageTk.PhotoImage(image=diff_preview))
+            window['-PREVIEW_ROUGH-'].update(
+                data=ImageTk.PhotoImage(image=rough_preview))
+            window['-PREVIEW_METAL-'].update(
+                data=ImageTk.PhotoImage(image=metal_preview))
+            window['-PREVIEW_DEPTH-'].update(
+                data=ImageTk.PhotoImage(image=depth_preview))
+            window['-PREVIEW_NORMAL-'].update(
+                data=ImageTk.PhotoImage(image=norm_preview))
+            window['-PREVIEW_DISP-'].update(
+                data=ImageTk.PhotoImage(image=disp_preview))
 
     # check tiling of the texture
     if event == 'Tile':
@@ -271,18 +293,18 @@ while True:
 
     # synthesize the material from the texture
     if event == 'Synthesize':
-        color, rough, metal, depth, norm, disp = tex2mat.tex_to_mat(
-            tex, invert_depth, metallness, roughness, normal_strength, displacement_strength)
+        raw, diff, rough, metal, depth, norm, disp = tex2mat.tex_to_mat(
+            tex, invert_depth, diffuse_strength, metallness_strength, roughness_strength, normal_strength, displacement_strength)
 
-        color_preview = color.resize((200, 200))
+        diff_preview = diff.resize((200, 200))
         rough_preview = rough.resize((200, 200))
         metal_preview = metal.resize((200, 200))
         depth_preview = depth.resize((200, 200))
         norm_preview = norm.resize((200, 200))
         disp_preview = disp.resize((200, 200))
 
-        window['-PREVIEW_COLOR-'].update(
-            data=ImageTk.PhotoImage(image=color_preview))
+        window['-PREVIEW_DIFF-'].update(
+            data=ImageTk.PhotoImage(image=diff_preview))
         window['-PREVIEW_ROUGH-'].update(
             data=ImageTk.PhotoImage(image=rough_preview))
         window['-PREVIEW_METAL-'].update(
@@ -295,9 +317,63 @@ while True:
             data=ImageTk.PhotoImage(image=disp_preview))
         print("synthesized")
 
+    if event == 'Load':
+        if values['-RAW_FILE-'] == '':
+            sg.popup_error('Please select a directory to save the textures')
+            continue
+
+        else:
+            # save the texture
+            path = values['-RAW_FILE-']
+            tex = Image.open(path)
+
+            if(loadtype_photo):
+                if(material_type == ""):
+                    sg.popup_error('No material type entered!')
+                else:
+                    helper.crop_center(tex)
+                    tex = tex.resize((512, 512))
+
+                    # remove the seams
+                    prompt = ai2tex.prompt_create(material_type)
+                    tex = ai2tex.tex_shift(tex)
+                    mask = ai2tex.tex_mask_seam(tex, seam_width)
+                    tex = ai2tex.tex_seam(prompt, tex, mask, seam_removal_quality)
+                    tex = ai2tex.tex_shift(tex)
+
+                    mask = ai2tex.tex_mask_center(tex, seam_width)
+                    tex = ai2tex.tex_seam(prompt, tex, mask, seam_removal_quality)
+
+            tex_preview = tex.resize((600, 600))
+            window['-PREVIEW-'].update(data=ImageTk.PhotoImage(image=tex_preview))
+
+            # texture to material
+            raw, diff, rough, metal, depth, norm, disp = tex2mat.tex_to_mat(
+                tex, invert_depth, diffuse_strength, metallness_strength, roughness_strength, normal_strength, displacement_strength)
+
+            diff_preview = diff.resize((200, 200))
+            rough_preview = rough.resize((200, 200))
+            metal_preview = metal.resize((200, 200))
+            depth_preview = depth.resize((200, 200))
+            norm_preview = norm.resize((200, 200))
+            disp_preview = disp.resize((200, 200))
+
+            window['-PREVIEW_DIFF-'].update(
+                data=ImageTk.PhotoImage(image=diff_preview))
+            window['-PREVIEW_ROUGH-'].update(
+                data=ImageTk.PhotoImage(image=rough_preview))
+            window['-PREVIEW_METAL-'].update(
+                data=ImageTk.PhotoImage(image=metal_preview))
+            window['-PREVIEW_DEPTH-'].update(
+                data=ImageTk.PhotoImage(image=depth_preview))
+            window['-PREVIEW_NORMAL-'].update(
+                data=ImageTk.PhotoImage(image=norm_preview))
+            window['-PREVIEW_DISP-'].update(
+                data=ImageTk.PhotoImage(image=disp_preview))
+
     # save the material to a folder and check if the folder exists already otherwise create a new one
     if event == 'Save':
-        if values['-FOLDER-'] == '':
+        if values['-SAVE_FOLDER-'] == '':
             sg.popup_error('Please select a directory to save the textures')
             continue
 
@@ -314,19 +390,22 @@ while True:
 
             os.mkdir(path)
             
-            color = helper.tex_resize(color, (tex_res, tex_res))
+            diff = helper.tex_resize(diff, (tex_res, tex_res))
             rough = helper.tex_resize(rough, (tex_res, tex_res))
             metal = helper.tex_resize(metal, (tex_res, tex_res))
             norm = helper.tex_resize(norm, (tex_res, tex_res))
             disp = helper.tex_resize(disp, (tex_res, tex_res))
 
-            color.save(path + '/' + material_type + '_color.png')
+            raw.save(path + '/' + material_type + '_raw.png')
+            diff.save(path + '/' + material_type + '_diff.png')
             rough.save(path + '/' + material_type + '_rough.png')
             metal.save(path + '/' + material_type + '_metal.png')
             norm.save(path + '/' + material_type + '_norm.png')
             disp.save(path + '/' + material_type + '_disp.png')
 
         sg.popup('Textures successfully saved')
+
+    
 
 # Finish up by removing from the screen
 window.close()
