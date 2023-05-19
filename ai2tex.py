@@ -40,11 +40,11 @@ def prompt_create(material_type):
     A string representing the prompt.
     '''
 
-    promt = "a realistic high detail texture of a " + material_type
-    return promt
+    prompt = "a realistic high detail texture of a " + material_type
+    return prompt
 
 
-def tex_create(promt, size, num_inference_steps):
+def tex_create(prompt, size, num_inference_steps):
     '''
     ------------------------------------------------
     A function that creates a diffuse texture according to the given prompt by using StableDiffusion.
@@ -61,7 +61,7 @@ def tex_create(promt, size, num_inference_steps):
     A PIL image representing the created texture.
     '''
     with torch.inference_mode():
-        tex = pipe_create(promt, size, size, num_inference_steps).images[0]
+        tex = pipe_create(prompt, size, size, num_inference_steps).images[0]
         return tex
 
 
@@ -153,7 +153,7 @@ def tex_seam(prompt, tex, mask, num_inference_steps):
     ------------------------------------------------
     promt: A string representing the prompt.
     tex: A PIL image representing the texture.
-    quadrants: An integer representing the number of quadrants in the texture.
+    mask: A PIL image representing the mask.
     seam_width: An integer representing the width of the seam.
     num_inference_steps: An integer representing the number of inference steps.
 
@@ -164,6 +164,3 @@ def tex_seam(prompt, tex, mask, num_inference_steps):
     seamless = pipe_inpaint(prompt=prompt, image=tex, mask_image=mask,
                             num_inference_steps=num_inference_steps).images[0]
     return seamless
-
-def get_progress():
-    return diffusers.utils.logging.get_verbosity()

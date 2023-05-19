@@ -1,6 +1,9 @@
 #%%
 import numpy as np
 from PIL import Image
+import cv2
+from io import BytesIO
+
 #%%
 # Helper functions
 # Convert a PIL image to a numpy array
@@ -25,16 +28,43 @@ def tex_resize(tex, size):
     return tex
 
 def soft_light(arr1, arr2):
-    # normalize to 0-1
-    arr1 = arr1.astype(np.float32)/255
-    arr2 = arr2.astype(np.float32)/255
+    '''
+    ------------------------------------------------
+    A function that blends two images using the soft light blend mode.
+
+    Args:
+    ------------------------------------------------
+    arr1: A numpy array representing the first image.
+    arr2: A numpy array representing the second image.
+
+    Returns:
+    ------------------------------------------------
+    A numpy array representing the blended image.
+    
+    Source:
+    ------------------------------------------------
+    http://www.pegtop.net/delphi/articles/blendmodes/softlight.htm
+    '''
 
     # compute soft light
     arr = (1 - 2*arr2) * arr1**2 + 2*arr2*arr1
-
-    # convert back to 0-255
-    arr = arr*255
+    
     return arr
+
+def range_upperlimit(arr, percentage):
+    arr = arr * (percentage / 100)
+    return arr
+
+def range_lowerlimit(arr, percentage):
+    arr = arr * percentage / 100 + (1 - percentage / 100)
+    return arr
+
+def range_midpoint(arr, percentage):
+    midpoint = 0.5 * percentage / 100
+    lower_bound = 0.5 - midpoint
+    upper_bound = 0.5 + midpoint
+    arr = cv2.normalize(arr, None, lower_bound, upper_bound, cv2.NORM_MINMAX, cv2.CV_32F)
+    return arr    
 
 def crop_center(tex):
     w, h = tex.size
@@ -45,3 +75,4 @@ def crop_center(tex):
         w_crop = (w - min_dim) // 2
         h_crop = (h - min_dim) // 2
         return tex.crop((w_crop, h_crop, w - w_crop, h - h_crop))
+# %%

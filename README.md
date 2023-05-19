@@ -15,6 +15,7 @@ Clone the repository and install the dependencies listed below.
 - [cv2](https://pypi.org/project/opencv-python/)
 - [PySimpleGUI](https://github.com/PySimpleGUI/PySimpleGUI)
 - [Matplotlib](https://matplotlib.org/stable/users/installing.html)
+- [pyrender](https://pyrender.readthedocs.io/en/latest/)
 
 ## Usage
 ![](./assets/ai2mat_usage.gif)
