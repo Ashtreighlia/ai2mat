@@ -7,15 +7,17 @@
 Clone the repository and install the dependencies listed below.
 
 **Dependencies**
+- [Python 3.10.x](https://www.python.org/downloads/)
 - [Pytorch](https://pytorch.org/get-started/locally/), with CUDA support.
-- [Xformers](https://github.com/facebookresearch/xformers)
 - [Diffusers](https://huggingface.co/docs/diffusers/installation)
+- [Transformers](https://huggingface.co/docs/transformers/installation)
 - [Numpy](https://numpy.org/install/)
 - [PIL](https://pillow.readthedocs.io/en/stable/installation.html)
 - [cv2](https://pypi.org/project/opencv-python/)
 - [PySimpleGUI](https://github.com/PySimpleGUI/PySimpleGUI)
 - [Matplotlib](https://matplotlib.org/stable/users/installing.html)
 - [pyrender](https://pyrender.readthedocs.io/en/latest/)
+- [bpy](https://docs.blender.org/api/current/info_quickstart.html)
 
 ## Usage
 ![](./assets/ai2mat_usage.gif)

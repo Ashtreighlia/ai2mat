@@ -1,8 +1,17 @@
 # %%
+# pylint: disable=E1101
 import numpy as np
 from PIL import Image
 import cv2
-from helper import tex_to_arr, arr_to_tex, soft_light, range_upperlimit, range_lowerlimit, range_midpoint
+
+from helper import (
+    tex_to_arr,
+    arr_to_tex,
+    soft_light,
+    range_upperlimit,
+    range_lowerlimit,
+    range_midpoint,
+)
 
 
 # %%
@@ -60,7 +69,7 @@ def depth_to_norm(depth, strength):
     normal = normal - np.mean(normal) + 0.5
     # Clip the values to the range [0, 1]
     normal = np.clip(normal, 0, 1)
-    
+
     return normal
 
 
@@ -88,6 +97,7 @@ def depth_to_disp(depth, strength):
     disp = np.clip(disp, 0, 1)
 
     return disp
+
 
 def tex_to_diff(tex, strength):
     """
@@ -118,7 +128,8 @@ def tex_to_diff(tex, strength):
     print(np.min(diff), np.max(diff))
     return diff
 
-def tex_to_rough(diffuse_map, normal_map, strength):
+
+def tex_to_rough(diffuse_map, normal_map, invert, strength):
     """
     ------------------------------------------------
     A function that converts a texture to a roughness map.
@@ -139,13 +150,18 @@ def tex_to_rough(diffuse_map, normal_map, strength):
     ny = normal_map[:, :, 1]
     nz = normal_map[:, :, 2]
 
-    rough = cv2.bilateralFilter(diffuse_map, 7, 50, 25) * 0.9 + 0.1 * np.sqrt(nx**2 + ny**2 + nz**2)
+    rough = cv2.bilateralFilter(diffuse_map, 7, 50, 25) * 0.9 + 0.1 * np.sqrt(
+        nx**2 + ny**2 + nz**2
+    )
+
+    if invert:
+        rough = 1 - rough
 
     rough = range_lowerlimit(rough, strength)
     return rough
 
 
-def metallic_map(diffuse_map, roughness_map, normal_map, strength):
+def metallic_map(diffuse_map, roughness_map, normal_map, invert, strength):
     """
     ------------------------------------------------
     A function that computes the metallic map from the base color map, roughness map, and depth map.
@@ -160,7 +176,7 @@ def metallic_map(diffuse_map, roughness_map, normal_map, strength):
     ------------------------------------------------
     A PIL image representing the metallic map.
     """
-    
+
     # get the normal vectors from the normal map
     nx = normal_map[:, :, 0]
     ny = normal_map[:, :, 1]
@@ -177,8 +193,13 @@ def metallic_map(diffuse_map, roughness_map, normal_map, strength):
     v = hsl[:, :, 2]
     # compute the metallic value
     # the less saturated the reflected light of a surface is, the more metallic it is
-    metalness = v * (1-s)
-    metal = metalness * 0.8 + 0.1 * roughness + 0.1 * np.sqrt(nx**2 + ny**2 + nz**2)
+    metalness = v * (1 - s)
+    metal = (
+        metalness * 0.8 + 0.1 * roughness + 0.1 * np.sqrt(nx**2 + ny**2 + nz**2)
+    )
+
+    if invert:
+        metal = 1 - metal
 
     # adjust the strength of the metallic map
     metal = range_upperlimit(metal, strength)
@@ -187,27 +208,29 @@ def metallic_map(diffuse_map, roughness_map, normal_map, strength):
 
 def tex_to_mat(
     tex,
-    depth_invert,
-    diff_strength,
+    diffuse_strength,
+    invert_metalness,
     metallness_strength,
+    invert_roughness,
     roughness_strength,
-    norm_strength,
-    disp_strength,
+    invert_depth,
+    normal_strength,
+    displacement_strength,
     bit_depth,
 ):
-    disp_strength = disp_strength + 1
-    tex = (tex_to_arr(tex)/255).astype(np.float32)
+    displacement_strength = displacement_strength + 1
+    tex = (tex_to_arr(tex) / 255).astype(np.float32)
 
     raw = tex
-    depth = tex_to_depth(tex, depth_invert)
-    normal = depth_to_norm(depth, norm_strength)
-    disp = depth_to_disp(depth, disp_strength)
-    diff = tex_to_diff(tex, diff_strength)
-    rough = tex_to_rough(diff, normal, roughness_strength)
-    metal = metallic_map(diff, rough, normal, metallness_strength)
+    depth = tex_to_depth(tex, invert_depth)
+    normal = depth_to_norm(depth, normal_strength)
+    disp = depth_to_disp(depth, displacement_strength)
+    diff = tex_to_diff(tex, diffuse_strength)
+    rough = tex_to_rough(diff, normal, invert_roughness, roughness_strength)
+    metal = metallic_map(diff, rough, normal, invert_metalness, metallness_strength)
 
     # convert the maps to the specified bit depth
-    diff = ((255*diff).astype(np.uint8) >> (8 - bit_depth) << (8 - bit_depth))/255
+    diff = ((255 * diff).astype(np.uint8) >> (8 - bit_depth) << (8 - bit_depth)) / 255
 
     # ugly type conversion to please PIL in not fucking up the ranges
     raw = Image.fromarray((raw * 255).astype(np.uint8))
@@ -219,36 +242,4 @@ def tex_to_mat(
     disp = Image.fromarray((disp * 255).astype(np.uint8))
 
     return raw, depth, diff, metal, rough, normal, disp
-
-
-import matplotlib.pyplot as plt
-
-def main():
-    tex = Image.open("./assets/brick-wall-surface/brick-wall-surface_color.png")
-    raw, depth, diff, metal, rough, normal, disp = tex_to_mat(
-        tex, 0, 100, 100, 1, 33, 100, 8
-    )
-
-    roughness = tex_to_arr(rough)
-    print(np.min(roughness), np.max(roughness))
-
-    # make a 3x3 grid of the textures
-    fig, axs = plt.subplots(2, 3)
-    axs[0, 0].imshow(diff)
-    axs[0, 0].set_title("Diffuse")
-    axs[0, 1].imshow(rough, cmap="gray")
-    axs[0, 1].set_title("Roughness")
-    axs[0, 2].imshow(metal, cmap="gray")
-    axs[0, 2].set_title("Metallic")
-    axs[1, 0].imshow(normal)
-    axs[1, 0].set_title("Normal")
-    axs[1, 1].imshow(disp, cmap="gray")
-    axs[1, 1].set_title("Displacement")
-    axs[1, 2].imshow(depth, cmap="gray")
-    axs[1, 2].set_title("Depth")
-    plt.show()
-
-if __name__ == "__main__":
-    main()
-
 # %%
