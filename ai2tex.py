@@ -1,4 +1,5 @@
 # %%
+# pylint: disable=E1101
 import diffusers
 import torch
 from diffusers import StableDiffusionInpaintPipeline, StableDiffusionPipeline
@@ -20,12 +21,6 @@ pipe_inpaint = StableDiffusionInpaintPipeline.from_pretrained(
 )
 pipe_inpaint.to("cuda")
 pipe_inpaint.enable_model_cpu_offload()
-
-# %%
-
-"""
-Texture creation functions
-"""
 
 
 def prompt_create(material_type):
@@ -175,3 +170,6 @@ def tex_seam(prompt, tex, mask, num_inference_steps):
         num_inference_steps=num_inference_steps,
     ).images[0]
     return seamless
+
+
+# %%
