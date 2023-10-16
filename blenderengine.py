@@ -197,7 +197,7 @@ def render_material(
     world.use_nodes = True
     world_node_tree = world.node_tree
     env_node = world_node_tree.nodes.new("ShaderNodeTexEnvironment")
-    env_node.image = bpy.data.images.load(r"E:\_prototypes\ai2mat\assets\hdri.hdr")
+    env_node.image = bpy.data.images.load(r"D:\ai2mat\assets\hdri.hdr")
 
     # create a mapping node and link it to the environment node to rotate the environment
     mapping_node = world_node_tree.nodes.new("ShaderNodeMapping")
