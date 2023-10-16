@@ -18,9 +18,11 @@ Clone the repository and install the dependencies listed below.
 - [Matplotlib](https://matplotlib.org/stable/users/installing.html)
 - [pyrender](https://pyrender.readthedocs.io/en/latest/)
 - [bpy](https://docs.blender.org/api/current/info_quickstart.html)
+- and an installation of [Blender](https://www.blender.org/download/).
 
 ## Usage
 ![](./assets/ai2mat_usage.gif)
+(Also, don't forget to change the directory of the HDRI image in 'blenderengine.py', line 200)
 
 ## Feature List
 ### Material synthesis
@@ -32,7 +34,7 @@ Clone the repository and install the dependencies listed below.
 #### Photographic
 - [ ] Automated image pre-processing
 - [ ] Automated image cropping
-- [ ] Image seamless tiling
+- [x] Image seamless tiling
 - [x] Material synthesis
 
 ### GUI
@@ -51,26 +53,7 @@ Clone the repository and install the dependencies listed below.
 - [x] Controls for export
 
 ## Improvements
-- [ ] Remove lighting information from the colour output
-
-## Examples
-### Texture generation
-| prompt | texture | tiling |
-| --- | --- | --- |
-| brick wall surface | ![](./assets/brick-wall-surface/brick-wall-surface_color.png) | ![](./assets/tile_preview/brick-wall-surface_tiled.jpg) |
-| sandstone surface | ![](./assets/sandstone-surface/sandstone-surface_color.png) | ![](./assets/tile_preview/sandstone-surface_tiled.jpg) |
-| tree bark surface | ![](./assets/tree-bark-surface/tree-bark-surface_color.png) | ![](./assets/tile_preview/tree-bark-surface_tiled.jpg) |
-| wood surface | ![](./assets/wood-surface/wood-surface_color.png) | ![](./assets/tile_preview/wood-surface_tiled.jpg) |
-| red leather surface | ![](./assets/red-leather-surface/red-leather-surface_color.png) | ![](./assets/tile_preview/red-leather-surface_tiled.jpg) |
-
-### Material synthesis
-| colour | metal | rough | norm | disp |
-| --- | --- | --- | --- | --- |
-| ![](./assets/brick-wall-surface/brick-wall-surface_color.png) | ![](./assets/brick-wall-surface/brick-wall-surface_metal.png) | ![](./assets/brick-wall-surface/brick-wall-surface_rough.png) | ![](./assets/brick-wall-surface/brick-wall-surface_norm.png) | ![](./assets/brick-wall-surface/brick-wall-surface_disp.png) |
-| ![](./assets/sandstone-surface/sandstone-surface_color.png) | ![](./assets/sandstone-surface/sandstone-surface_metal.png) | ![](./assets/sandstone-surface/sandstone-surface_rough.png) | ![](./assets/sandstone-surface/sandstone-surface_norm.png) | ![](./assets/sandstone-surface/sandstone-surface_disp.png) |
-| ![](./assets/tree-bark-surface/tree-bark-surface_color.png) | ![](./assets/tree-bark-surface/tree-bark-surface_metal.png) | ![](./assets/tree-bark-surface/tree-bark-surface_rough.png) | ![](./assets/tree-bark-surface/tree-bark-surface_norm.png) | ![](./assets/tree-bark-surface/tree-bark-surface_disp.png) |
-| ![](./assets/wood-surface/wood-surface_color.png) | ![](./assets/wood-surface/wood-surface_metal.png) | ![](./assets/wood-surface/wood-surface_rough.png) | ![](./assets/wood-surface/wood-surface_norm.png) | ![](./assets/wood-surface/wood-surface_disp.png) |
-| ![](./assets/red-leather-surface/red-leather-surface_color.png) | ![](./assets/red-leather-surface/red-leather-surface_metal.png) | ![](./assets/red-leather-surface/red-leather-surface_rough.png) | ![](./assets/red-leather-surface/red-leather-surface_norm.png) | ![](./assets/red-leather-surface/red-leather-surface_disp.png) |
+- [x] Remove lighting information from the colour output
 
 ## Contributing
 Contributions are welcome, just open an issue or a pull request.

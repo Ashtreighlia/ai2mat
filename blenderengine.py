@@ -13,7 +13,7 @@ from PIL import Image
 def create_material(
     name, diffuse_map, metalness_map, roughness_map, normal_map, displacement_map
 ):
-    '''
+    """
     ------------------------------------------------
     A function that creates a new blender material from textures.
 
@@ -29,7 +29,7 @@ def create_material(
     Returns:
     ------------------------------------------------
     A blender material.
-    '''
+    """
 
     # create a new material and set it to use nodes
     mat = bpy.data.materials.new(name)
@@ -53,7 +53,7 @@ def create_material(
 
     # get resolution of the textures
     size = diffuse_map.size[0]
-    
+
     # create empty images for the textures according to the resolution
     diffuse_texture = bpy.data.images.new(
         name="diffuse", width=size, height=size, alpha=False, float_buffer=True
@@ -169,7 +169,7 @@ def render_material(
     normal_map,
     displacement_map,
 ):
-    '''
+    """
     ------------------------------------------------
     Render a material with the given texture maps and light rotation
 
@@ -186,7 +186,7 @@ def render_material(
     Returns:
     ------------------------------------------------
     A PIL image representing the rendered material preview.
-    '''
+    """
 
     # clear the scene
     bpy.ops.wm.read_factory_settings(use_empty=True)
@@ -197,7 +197,7 @@ def render_material(
     world.use_nodes = True
     world_node_tree = world.node_tree
     env_node = world_node_tree.nodes.new("ShaderNodeTexEnvironment")
-    env_node.image = bpy.data.images.load(r"E:\_prototypes\ai2mat\assets\hdri.hdr")
+    env_node.image = bpy.data.images.load(r"D:\ai2mat\assets\hdri.hdr")
 
     # create a mapping node and link it to the environment node to rotate the environment
     mapping_node = world_node_tree.nodes.new("ShaderNodeMapping")
@@ -254,14 +254,14 @@ def render_material(
     bpy.context.scene.render.filepath = image_path
     bpy.ops.render.render(write_still=True)
 
-    # really dirty way to read the rendered image and jank the it out of PIL's scope to remove the file
-    render_PIL = Image.open(image_path)
-    render_np = np.array(render_PIL)
-    Image.Image.close(render_PIL)
-    render_PIL = Image.fromarray(render_np)
+    # really dirty way to read the rendered image and jank the it out of PIL's scope for removal
+    render_image = Image.open(image_path)
+    render_np = np.array(render_image)
+    Image.Image.close(render_image)
+    render_image = Image.fromarray(render_np)
     os.remove(image_path)
 
-    return render_PIL
+    return render_image
 
 
 # append existing material library if it exists
@@ -274,7 +274,7 @@ def save_material_library(
     normal_map,
     displacement_map,
 ):
-    '''
+    """
     ------------------------------------------------
     Save a material to the material library
 
@@ -291,7 +291,7 @@ def save_material_library(
     Returns:
     ------------------------------------------------
     None
-    '''
+    """
 
     # clear the scene
     bpy.ops.wm.read_factory_settings(use_empty=True)
@@ -306,7 +306,8 @@ def save_material_library(
             data_to.textures = data_from.textures
             data_to.node_groups = data_from.node_groups
 
-    # check if material already exists and give it a unique name (e.g. material_001) also check if any subfixes are already present
+    # check if material already exists and give it a unique name (e.g. material_001) 
+    # also check if any subfixes are already present
     i = 0
     for mat in bpy.data.materials:
         if material_name in mat.name:
